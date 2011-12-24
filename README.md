@@ -11,6 +11,10 @@ Linuxカーネルのソースコードなどを読むときに「手元にコー
 
 これらの問題点を解決したのがccallgraphです．
 
+詳しくはWikiページをごらんください．
+
+[Wikiページはこちら](https://github.com/yasuharu/ccallgraph/wiki)
+
 ## サンプル
 
 ### Linuxのintelfbモジュールのソース
