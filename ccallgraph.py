@@ -77,8 +77,8 @@ for i in range(len(sys.argv)):
 print "# Analyze C source";
 print "# [Warning] This software is not support i18n";
 
+item_list     = [];	# [file_name, [function_callee_list]]
 function_list = [];
-callee_list   = [];
 
 # analyze C language files.
 for file in input_file_list:
@@ -152,12 +152,19 @@ for file in input_file_list:
 			temp_function_list.append([name, hint_text_num, end_function_num, hint_line_num, file]);
 
 	# callee eliminate not inner function block.
-	temp_callee_list2 = [];	# [name, text_num, line_num, file_name, caller]
+
+	# build item tree.
+	# item_list = [file_name, [function_callee_list]]
+	# function_callee_list = [function_name , [callee_name, text_num, line_num, file_name]
+
+	temp_item_list = [file, []];	# [file_name, [function_callee_list]]
 	for function in temp_function_list:
 		function_name      = function[0];
 		function_begin_num = function[1];
 		function_end_num   = function[2];
 
+		# [function_name , [callee_name, text_num, line_num, file_name]
+		function_callee_list = [function_name, []];
 		for callee in temp_callee_list:
 			callee_name = callee[0];
 			callee_num  = callee[1];
@@ -167,30 +174,40 @@ for file in input_file_list:
 	
 			if function_begin_num < callee_num and callee_num < function_end_num:
 				callee.append(function_name);
-				temp_callee_list2.append(callee);
+				function_callee_list[1].append(callee);
+
+		temp_item_list[1].append(function_callee_list);
 
 	function_list.extend(temp_function_list);
-	callee_list.extend(temp_callee_list2);
+	item_list.append(temp_item_list);
 
 print "digraph output {";
+print "graph [rankdir = LR]";
 
-for function in function_list:
-	function_name      = function[0];
-	function_begin_num = function[1];
-	function_end_num   = function[2];
-	file               = function[4];
+i = 0;
+for file in item_list:
+	file_name            = file[0];
+	function_callee_list = file[1];
 
-	for callee in callee_list:
-		callee_name   = callee[0];
-		callee_caller = callee[4];
+	# subgraph name must "clusterX".
+	print "subgraph cluster" + str(i) + " {";
+	print "label = \"" + file_name + "\";";
 
-		if function_name != callee_caller:
-			continue;
+	for function in function_callee_list:
+		function_name = function[0];
+		callee_list   = function[1];
 
-		# eliminate not function list item
-		for f in function_list:
-			if(callee[0] == f[0]):
-				print function_name + " -> " + str(callee[0]) + " [label=\"" + file + " line at " + str(callee[2]) + "\"]";
+		for callee in callee_list:
+			callee_name   = callee[0];
+			callee_line   = callee[2];
+
+			# eliminate not function list item
+			for f in function_list:
+				if(callee[0] == f[0]):
+					print function_name + " -> " + callee_name + " [label=\"" + file_name + " line at " + str(callee_line) + "\"];";
+
+	print "}";
+	i = i + 1;
 
 print "}";
 
